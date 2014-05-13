@@ -97,7 +97,7 @@ def explore_match(win, img1, img2, kp_pairs, status = None, H = None):
     vis0 = vis.copy()
     for (x1, y1), (x2, y2), inlier in zip(p1, p2, status):
         if inlier:
-            cv2.line(vis, (x1, y1), (x2, y2), green)
+            cv2.line(vis, (x1, y1), (x2, y2), green, lineType = cv2.CV_AA)
 
     cv2.imshow(win, vis)
     def onmouse(event, x, y, flags, param):
@@ -111,7 +111,7 @@ def explore_match(win, img1, img2, kp_pairs, status = None, H = None):
             for i in idxs:
                  (x1, y1), (x2, y2) = p1[i], p2[i]
                  col = (red, green)[status[i]]
-                 cv2.line(cur_vis, (x1, y1), (x2, y2), col)
+                 cv2.line(cur_vis, (x1, y1), (x2, y2), col, lineType = cv2.CV_AA)
                  kp1, kp2 = kp_pairs[i]
                  kp1s.append(kp1)
                  kp2s.append(kp2)
