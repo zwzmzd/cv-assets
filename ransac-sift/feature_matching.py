@@ -5,6 +5,7 @@ import cv2
 import os
 import sys
 from find_obj import filter_matches,explore_match
+import itertools
 
 if __name__ == '__main__':
 	img1 = cv2.imread(os.path.join('data', 'box.png'),0)          # queryImage
@@ -44,16 +45,14 @@ if __name__ == '__main__':
 	# M: 变换矩阵 3 * 3
 	# mask: 30 * 1维的01矩阵，代表点对的选择或遗弃。1表示选择
 	M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
-	mkp1 = [kp1[good_matches[i].queryIdx] for i in xrange(len(good_matches)) if mask[i, 0] == 1]
-	mkp2 = [kp2[good_matches[i].trainIdx] for i in xrange(len(good_matches)) if mask[i, 0] == 1]
+
+	# 根据掩码筛选keypoint
+	mask.ravel().tolist()
+	mkp1 = itertools.compress(mkp1, mask)
+	mkp2 = itertools.compress(mkp2, mask)	
+
 	kp_pairs = zip(mkp1, mkp2)
 	explore_match('Ransaced', img1,img2,kp_pairs) #cv2 shows image
 
 	cv2.waitKey()
 	cv2.destroyAllWindows()
-
-#	# Draw first 10 matches.
-#	img3 = cv2.drawMatches(img1,kp1,img2,kp2,good_matches, flags=2)
-#	cv2.imshow('hello', img3)
-#	cv2.waitKey()
-
