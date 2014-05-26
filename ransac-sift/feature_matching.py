@@ -8,8 +8,8 @@ from find_obj import filter_matches,explore_match
 import itertools
 
 if __name__ == '__main__':
-	img1 = cv2.imread(os.path.join('data', 'box.png'),0)          # queryImage
-	img2 = cv2.imread(os.path.join('data', 'box_in_scene.png'),0) # trainImage
+	img1 = cv2.imread(os.path.join('data', 'a.png'),0)          # queryImage
+	img2 = cv2.imread(os.path.join('data', 'b.png'),0) # trainImage
 
 	# Initiate SIFT detector
 	orb = cv2.ORB()
@@ -45,6 +45,12 @@ if __name__ == '__main__':
 	# M: 变换矩阵 3 * 3
 	# mask: 30 * 1维的01矩阵，代表点对的选择或遗弃。1表示选择
 	M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
+
+	height, width = img1.shape;
+	result = cv2.warpPerspective(img1, M, (width * 2, height * 2))
+
+	# result = cv2.resize(result, (width, height))
+	cv2.imshow('wrapped', result)
 
 	# 根据掩码筛选keypoint
 	mask.ravel().tolist()
