@@ -6,10 +6,22 @@ import os
 import sys
 from find_obj import filter_matches,explore_match
 import itertools
+import getopt
 
 if __name__ == '__main__':
-	img1 = cv2.imread(os.path.join('data', 'a.png'),0)          # queryImage
-	img2 = cv2.imread(os.path.join('data', 'b.png'),0) # trainImage
+	query_image = None
+	train_image = None
+
+	opts, args = getopt.getopt(sys.argv[1:], 'q:t:', ['query=', 'train='])
+	for o, a in opts:
+		if o in ('-q', '--query'):
+			query_image = a
+		elif o in ('-t', '--train'):
+			train_image = a
+	assert query_image and train_image
+
+	img1 = cv2.imread(query_image,0)          # queryImage
+	img2 = cv2.imread(train_image,0) # trainImage
 
 	# Initiate SIFT detector
 	orb = cv2.ORB()
