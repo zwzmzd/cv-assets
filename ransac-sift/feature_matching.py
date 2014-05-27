@@ -65,7 +65,7 @@ if __name__ == '__main__':
 	cv2.imshow('wrapped', result)
 
 	# 根据掩码筛选keypoint
-	mask.ravel().tolist()
+	mask = mask.ravel().tolist()
 	mkp1 = itertools.compress(mkp1, mask)
 	mkp2 = itertools.compress(mkp2, mask)	
 
