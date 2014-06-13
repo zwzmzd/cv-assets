@@ -11,13 +11,16 @@ import getopt
 if __name__ == '__main__':
 	query_image = None
 	train_image = None
+	output_image = None
 
-	opts, args = getopt.getopt(sys.argv[1:], 'q:t:', ['query=', 'train='])
+	opts, args = getopt.getopt(sys.argv[1:], 'q:t:o:', ['query=', 'train=', 'output='])
 	for o, a in opts:
 		if o in ('-q', '--query'):
 			query_image = a
 		elif o in ('-t', '--train'):
 			train_image = a
+		elif o in ('-o', '--output'):
+			output_image = a
 	assert query_image and train_image
 
 	img1 = cv2.imread(query_image,0)          # queryImage
@@ -70,7 +73,7 @@ if __name__ == '__main__':
 	mkp2 = itertools.compress(mkp2, mask)	
 
 	kp_pairs = zip(mkp1, mkp2)
-	explore_match('Ransaced', img1,img2,kp_pairs) #cv2 shows image
+	explore_match('Ransaced', img1,img2,kp_pairs, output_img = output_image) #cv2 shows image
 
 	cv2.waitKey()
 	cv2.destroyAllWindows()

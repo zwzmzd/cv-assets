@@ -59,7 +59,7 @@ def filter_matches(kp1, kp2, matches, ratio = 0.75):
     kp_pairs = zip(mkp1, mkp2)
     return p1, p2, kp_pairs
 
-def explore_match(win, img1, img2, kp_pairs, status = None, H = None):
+def explore_match(win, img1, img2, kp_pairs, status = None, H = None, output_img = None):
     h1, w1 = img1.shape[:2]
     h2, w2 = img2.shape[:2]
     vis = np.zeros((max(h1, h2), w1+w2), np.uint8)
@@ -100,6 +100,8 @@ def explore_match(win, img1, img2, kp_pairs, status = None, H = None):
             cv2.line(vis, (x1, y1), (x2, y2), green, lineType = cv2.CV_AA)
 
     cv2.imshow(win, vis)
+    if output_img is not None:
+        cv2.imwrite(output_img, vis)
     def onmouse(event, x, y, flags, param):
         cur_vis = vis
         if flags & cv2.EVENT_FLAG_LBUTTON:
