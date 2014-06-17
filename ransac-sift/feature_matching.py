@@ -11,9 +11,10 @@ import getopt
 if __name__ == '__main__':
 	query_image = None
 	train_image = None
+	original_match_image = None
 	output_image = None
 
-	opts, args = getopt.getopt(sys.argv[1:], 'q:t:o:', ['query=', 'train=', 'output='])
+	opts, args = getopt.getopt(sys.argv[1:], 'q:t:o:', ['query=', 'train=', 'output=', 'original='])
 	for o, a in opts:
 		if o in ('-q', '--query'):
 			query_image = a
@@ -21,6 +22,8 @@ if __name__ == '__main__':
 			train_image = a
 		elif o in ('-o', '--output'):
 			output_image = a
+		elif o in ('--original'):
+			original_match_image = a
 	assert query_image and train_image
 
 	img1 = cv2.imread(query_image,0)          # queryImage
@@ -48,7 +51,7 @@ if __name__ == '__main__':
 	mkp1 = [kp1[m.queryIdx] for m in good_matches]
 	mkp2 = [kp2[m.trainIdx] for m in good_matches]
 	kp_pairs = zip(mkp1, mkp2)
-	explore_match('BFMatcher', img1,img2,kp_pairs) #cv2 shows image
+	explore_match('BFMatcher', img1,img2,kp_pairs, output_img = original_match_image) #cv2 shows image
 
 
 	# 进行Ransac过程
