@@ -7,14 +7,16 @@ import sys
 from find_obj import filter_matches,explore_match
 import itertools
 import getopt
+import json
 
 if __name__ == '__main__':
 	query_image = 'data/a1.png'
 	train_image = 'data/a2.png'
 	original_match_image = None
 	output_image = None
+	pt_match_file = None
 
-	opts, args = getopt.getopt(sys.argv[1:], 'q:t:o:', ['query=', 'train=', 'output=', 'original='])
+	opts, args = getopt.getopt(sys.argv[1:], 'q:t:o:', ['query=', 'train=', 'output=', 'original=', 'pointsmatch='])
 	for o, a in opts:
 		if o in ('-q', '--query'):
 			query_image = a
@@ -24,75 +26,68 @@ if __name__ == '__main__':
 			output_image = a
 		elif o in ('--original'):
 			original_match_image = a
+		elif o in ('--pointsmatch'):
+			pt_match_file = a
 	assert query_image and train_image
 
 	img1 = cv2.imread(query_image,0)          # queryImage
 	img2 = cv2.imread(train_image,0) # trainImage
 
-	# Initiate SIFT detector
-	orb = cv2.ORB()
+	if pt_match_file:
+		# 从文件中读取标注好的点
+		fp = open(pt_match_file, 'r')
+		query_pt_set, train_pt_set = json.load(fp)
+		fp.close()
 
-	# find the keypoints and descriptors with SIFT
-	kp1, des1 = orb.detectAndCompute(img1,None)
-	kp2, des2 = orb.detectAndCompute(img2,None)
+		src_pts = np.float32(query_pt_set).reshape(-1, 1, 2)
+		dst_pts = np.float32(train_pt_set).reshape(-1, 1, 2)
 
-	# create BFMatcher object
-	bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+		# 使用8个对应点构造Homography
+		M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
+		print 'mask:', mask.ravel()
 
-	# Match descriptors.
-	matches = bf.match(des1,des2)
+		height, width = img1.shape;
+		result = cv2.warpPerspective(img1, M, (width * 2, height * 2))
+		cv2.imshow('result', result);
 
-	# Sort them in the order of their distance.
-	# 取前30个
-	matches = sorted(matches, key = lambda x:x.distance)
-	good_matches = matches[:30]
+		cv2.waitKey()
+		cv2.destroyAllWindows()
+	else:
+		# 标注对应的点, 并保存到文件中
+		img1_color = cv2.cvtColor(img1, cv2.COLOR_GRAY2BGR)
+		img2_color = cv2.cvtColor(img2, cv2.COLOR_GRAY2BGR)
 
-	# 显示匹配
-	mkp1 = [kp1[m.queryIdx] for m in good_matches]
-	mkp2 = [kp2[m.trainIdx] for m in good_matches]
-	kp_pairs = zip(mkp1, mkp2)
-	explore_match('BFMatcher', img1,img2,kp_pairs, output_img = original_match_image) #cv2 shows image
+		def mouseWrapper(win, image, collector = None):
+			cancel = False
+			def onmouse(event, x, y, flags, param):
+				global cancel
+				if event == cv2.EVENT_LBUTTONDOWN:
+					cancel = False
+				elif event == cv2.EVENT_MOUSEMOVE:
+					cancel = True
+				elif event == cv2.EVENT_LBUTTONUP:
+					if not cancel:
+						collector.append((x, y))
+						cv2.circle(image, (x, y), 3, (0, 255, 0), -1, lineType = cv2.CV_AA)
+						cv2.imshow(win, image)
+			return onmouse
 
+		query_win = 'query'
+		cv2.imshow(query_win, img1_color)
+		query_pt_set = []
+		cv2.setMouseCallback(query_win, mouseWrapper(query_win, img1_color, collector = query_pt_set))
 
-	# 进行Ransac过程
-	src_pts = np.float32([ kp1[m.queryIdx].pt for m in good_matches ]).reshape(-1, 1, 2)
-	dst_pts = np.float32([ kp2[m.trainIdx].pt for m in good_matches ]).reshape(-1, 1, 2)
-	assert src_pts.shape == dst_pts.shape
+		train_win = 'train'
+		cv2.imshow(train_win, img2_color)
+		train_pt_set = []
+		cv2.setMouseCallback(train_win, mouseWrapper(train_win, img2_color, collector = train_pt_set))
 
-	# 这个函数需要再看下
-	# M: 变换矩阵 3 * 3
-	# mask: 30 * 1维的01矩阵，代表点对的选择或遗弃。1表示选择
-	M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
+		cv2.waitKey()
+		cv2.destroyAllWindows()
 
-	height, width = img1.shape;
-	print img1.dtype
-	result = cv2.warpPerspective(img1, M, (width * 2, height * 2))
+		assert len(query_pt_set) == len(train_pt_set)
+		result = json.dumps([query_pt_set, train_pt_set])
 
-	# result = cv2.resize(result, (width, height))
-	cv2.imshow('wrapped', result)
-	def mouseWrapper():
-		cancel = False
-		def onmouse(event, x, y, flags, param):
-			global cancel
-			if event == cv2.EVENT_LBUTTONDOWN:
-				cancel = False
-			elif event == cv2.EVENT_MOUSEMOVE:
-				cancel = True
-			elif event == cv2.EVENT_LBUTTONUP:
-				if not cancel:
-					cv2.circle(result, (x, y), 5, (255, 0, 0), -1, lineType = cv2.CV_AA)
-					cv2.imshow('wrapped', result)
-					print result.dtype
-		return onmouse
-	cv2.setMouseCallback('wrapped', mouseWrapper())
-
-	# 根据掩码筛选keypoint
-	mask = mask.ravel().tolist()
-	mkp1 = itertools.compress(mkp1, mask)
-	mkp2 = itertools.compress(mkp2, mask)	
-
-	kp_pairs = zip(mkp1, mkp2)
-	explore_match('Ransaced', img1,img2,kp_pairs, output_img = output_image) #cv2 shows image
-
-	cv2.waitKey()
-	cv2.destroyAllWindows()
+		fp = open('a.json', 'w')
+		fp.write(result)
+		fp.close()
