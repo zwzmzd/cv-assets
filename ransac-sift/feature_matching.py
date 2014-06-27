@@ -66,6 +66,9 @@ if __name__ == '__main__':
 	# M: 变换矩阵 3 * 3
 	# mask: 30 * 1维的01矩阵，代表点对的选择或遗弃。1表示选择
 	M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
+	
+	print '%d / %d' % (len(filter(lambda x: x > 0, mask.ravel().tolist())), mask.shape[0])
+	print M
 
 	height, width = img1.shape;
 	result = cv2.warpPerspective(img1, M, (width * 2, height * 2))
