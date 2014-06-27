@@ -13,8 +13,9 @@ if __name__ == '__main__':
 	train_image = None
 	original_match_image = None
 	output_image = None
+	transformed_image = None
 
-	opts, args = getopt.getopt(sys.argv[1:], 'q:t:o:', ['query=', 'train=', 'output=', 'original='])
+	opts, args = getopt.getopt(sys.argv[1:], 'q:t:o:', ['query=', 'train=', 'output=', 'original=', 'transformed='])
 	for o, a in opts:
 		if o in ('-q', '--query'):
 			query_image = a
@@ -24,6 +25,8 @@ if __name__ == '__main__':
 			output_image = a
 		elif o in ('--original'):
 			original_match_image = a
+		elif o in ('--transformed'):
+			transformed_image = a
 	assert query_image and train_image
 
 	img1 = cv2.imread(query_image,0)          # queryImage
@@ -68,7 +71,10 @@ if __name__ == '__main__':
 	result = cv2.warpPerspective(img1, M, (width * 2, height * 2))
 
 	# result = cv2.resize(result, (width, height))
-	cv2.imshow('wrapped', result)
+	if transformed_image:
+		cv2.imwrite(transformed_image, result)
+	else:
+		cv2.imshow('wrapped', result)
 
 	# 根据掩码筛选keypoint
 	mask = mask.ravel().tolist()
