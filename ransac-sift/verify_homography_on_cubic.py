@@ -9,14 +9,30 @@ import itertools
 import getopt
 import json
 
+def construct_kp_pairs(query_pt_set, train_pt_set):
+	kp1 = []
+	for pt in query_pt_set:
+		keyPoint = cv2.KeyPoint()
+		keyPoint.pt = tuple(pt)
+		kp1.append(keyPoint)
+	kp2 = []
+	for pt in train_pt_set:
+		keyPoint = cv2.KeyPoint()
+		keyPoint.pt = tuple(pt)
+		kp2.append(keyPoint)
+	kp_pairs = zip(kp1, kp2)
+	return kp_pairs
+
+
 if __name__ == '__main__':
 	query_image = 'data/a1.png'
 	train_image = 'data/a2.png'
 	original_match_image = None
 	output_image = None
+	transformed_image = None
 	pt_match_file = None
 
-	opts, args = getopt.getopt(sys.argv[1:], 'q:t:o:', ['query=', 'train=', 'output=', 'original=', 'pointsmatch='])
+	opts, args = getopt.getopt(sys.argv[1:], 'q:t:o:', ['query=', 'train=', 'output=', 'original=', 'pointsmatch=', 'transformed='])
 	for o, a in opts:
 		if o in ('-q', '--query'):
 			query_image = a
@@ -26,6 +42,8 @@ if __name__ == '__main__':
 			output_image = a
 		elif o in ('--original'):
 			original_match_image = a
+		elif o in ('--transformed'):
+			transformed_image = a
 		elif o in ('--pointsmatch'):
 			pt_match_file = a
 	assert query_image and train_image
@@ -42,13 +60,27 @@ if __name__ == '__main__':
 		src_pts = np.float32(query_pt_set).reshape(-1, 1, 2)
 		dst_pts = np.float32(train_pt_set).reshape(-1, 1, 2)
 
+		explore_match('Raw', img1, img2, construct_kp_pairs(query_pt_set, train_pt_set), output_img = original_match_image)
+
 		# 使用8个对应点构造Homography
 		M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
-		print 'mask:', mask.ravel()
+		print '%d / %d' % (len(filter(lambda x: x > 0, mask.ravel().tolist())), mask.shape[0])
+		print M
 
 		height, width = img1.shape;
 		result = cv2.warpPerspective(img1, M, (width * 2, height * 2))
-		cv2.imshow('result', result);
+		if transformed_image:
+			cv2.imwrite(transformed_image, result)
+		else:
+			cv2.imshow('result', result);
+
+		# 根据掩码筛选keypoint
+		mask = mask.ravel().tolist()
+		query_pt_set_ransaced = itertools.compress(query_pt_set, mask)
+		train_pt_set_ransaced = itertools.compress(train_pt_set, mask)
+		explore_match('Ransaced', img1, img2, \
+			construct_kp_pairs(query_pt_set_ransaced, train_pt_set_ransaced), \
+			output_img = output_image) #cv2 shows image
 
 		cv2.waitKey()
 		cv2.destroyAllWindows()
