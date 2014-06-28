@@ -11,11 +11,17 @@ import getopt
 if __name__ == '__main__':
 	query_image = None
 	train_image = None
+	query_keypoints_image = None
+	train_keypoints_image = None
+
 	original_match_image = None
 	output_image = None
 	transformed_image = None
 
-	opts, args = getopt.getopt(sys.argv[1:], 'q:t:o:', ['query=', 'train=', 'output=', 'original=', 'transformed='])
+	# 从命令行中读取参数
+	opts, args = getopt.getopt(sys.argv[1:], \
+		'q:t:o:', \
+		['query=', 'train=', 'output=', 'original=', 'transformed=', 'query-keypoints=', 'train-keypoints='])
 	for o, a in opts:
 		if o in ('-q', '--query'):
 			query_image = a
@@ -27,6 +33,10 @@ if __name__ == '__main__':
 			original_match_image = a
 		elif o in ('--transformed'):
 			transformed_image = a
+		elif o in ('--query-keypoints'):
+			query_keypoints_image = a
+		elif o in ('--train-keypoints'):
+			train_keypoints_image = a
 	assert query_image and train_image
 
 	img1 = cv2.imread(query_image,0)          # queryImage
@@ -47,6 +57,14 @@ if __name__ == '__main__':
 	for m, n in matches:
 		if m.distance < 0.75 * n.distance:
 			good_matches.append(m)
+
+	# 输出Keypoints
+	if query_keypoints_image:
+		img1_with_keypoints = cv2.drawKeypoints(img1, kp1, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+		cv2.imwrite(query_keypoints_image, img1_with_keypoints)
+	if train_keypoints_image:
+		img2_with_keypoints = cv2.drawKeypoints(img2, kp2, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+		cv2.imwrite(train_keypoints_image, img2_with_keypoints)
 
 	# 显示匹配
 	mkp1 = [kp1[m.queryIdx] for m in good_matches]
