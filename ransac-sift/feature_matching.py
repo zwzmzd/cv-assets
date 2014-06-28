@@ -33,22 +33,20 @@ if __name__ == '__main__':
 	img2 = cv2.imread(train_image,0) # trainImage
 
 	# Initiate SIFT detector
-	orb = cv2.ORB()
-
+	sift = cv2.SIFT()
 	# find the keypoints and descriptors with SIFT
-	kp1, des1 = orb.detectAndCompute(img1,None)
-	kp2, des2 = orb.detectAndCompute(img2,None)
+	kp1, des1 = sift.detectAndCompute(img1,None)
+	kp2, des2 = sift.detectAndCompute(img2,None)
 
-	# create BFMatcher object
-	bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+	bf = cv2.BFMatcher()
+	# query中的每个KeyPoint在train中都有两个对应点
+	matches = bf.knnMatch(des1,des2, k = 2)
 
-	# Match descriptors.
-	matches = bf.match(des1,des2)
-
-	# Sort them in the order of their distance.
-	# 取前30个
-	matches = sorted(matches, key = lambda x:x.distance)
-	good_matches = matches[:30]
+	# 筛选对应点，最近邻和次近邻的距离大小满足一定关系
+	good_matches = []
+	for m, n in matches:
+		if m.distance < 0.75 * n.distance:
+			good_matches.append(m)
 
 	# 显示匹配
 	mkp1 = [kp1[m.queryIdx] for m in good_matches]
@@ -57,12 +55,12 @@ if __name__ == '__main__':
 	explore_match('BFMatcher', img1,img2,kp_pairs, output_img = original_match_image) #cv2 shows image
 
 
-	# 进行Ransac过程
+	# 从KeyPoint中提取位置坐标
 	src_pts = np.float32([ kp1[m.queryIdx].pt for m in good_matches ]).reshape(-1, 1, 2)
 	dst_pts = np.float32([ kp2[m.trainIdx].pt for m in good_matches ]).reshape(-1, 1, 2)
 	assert src_pts.shape == dst_pts.shape
 
-	# 这个函数需要再看下
+	# 使用RANSAC方法查找Homography变换
 	# M: 变换矩阵 3 * 3
 	# mask: 30 * 1维的01矩阵，代表点对的选择或遗弃。1表示选择
 	M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
@@ -77,7 +75,7 @@ if __name__ == '__main__':
 	if transformed_image:
 		cv2.imwrite(transformed_image, result)
 	else:
-		cv2.imshow('wrapped', result)
+		cv2.imshow('warpped', result)
 
 	# 根据掩码筛选keypoint
 	mask = mask.ravel().tolist()
