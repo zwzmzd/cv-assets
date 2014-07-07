@@ -7,6 +7,7 @@ import sys
 from find_obj import filter_matches,explore_match
 import itertools
 import getopt
+import utils
 
 if __name__ == '__main__':
 	query_image = None
@@ -88,6 +89,7 @@ if __name__ == '__main__':
 
 	height, width = img1.shape;
 	result = cv2.warpPerspective(img1, M, (width * 2, height * 2))
+	result = utils.cut_black_edge(result)
 
 	# result = cv2.resize(result, (width, height))
 	if transformed_image:
