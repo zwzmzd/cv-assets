@@ -3,6 +3,20 @@
 import cv2
 import numpy as np
 
+def construct_kp_pairs(query_pt_set, train_pt_set):
+	kp1 = []
+	for pt in query_pt_set:
+		keyPoint = cv2.KeyPoint()
+		keyPoint.pt = tuple(pt)
+		kp1.append(keyPoint)
+	kp2 = []
+	for pt in train_pt_set:
+		keyPoint = cv2.KeyPoint()
+		keyPoint.pt = tuple(pt)
+		kp2.append(keyPoint)
+	kp_pairs = zip(kp1, kp2)
+	return kp_pairs
+
 def cut_black_edge(image):
 	height, width = image.shape
 	print width, height

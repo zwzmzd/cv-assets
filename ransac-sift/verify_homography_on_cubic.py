@@ -8,20 +8,8 @@ from find_obj import filter_matches,explore_match
 import itertools
 import getopt
 import json
+from utils import construct_kp_pairs
 
-def construct_kp_pairs(query_pt_set, train_pt_set):
-	kp1 = []
-	for pt in query_pt_set:
-		keyPoint = cv2.KeyPoint()
-		keyPoint.pt = tuple(pt)
-		kp1.append(keyPoint)
-	kp2 = []
-	for pt in train_pt_set:
-		keyPoint = cv2.KeyPoint()
-		keyPoint.pt = tuple(pt)
-		kp2.append(keyPoint)
-	kp_pairs = zip(kp1, kp2)
-	return kp_pairs
 
 
 if __name__ == '__main__':
