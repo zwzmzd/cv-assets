@@ -8,7 +8,22 @@ from find_obj import filter_matches,explore_match
 import itertools
 import getopt
 import json
-from utils import construct_kp_pairs
+import utils
+
+pointColor = [
+	(1.0, 0.0, 0.0),
+	(0.0, 1.0, 0.0),
+	(0.0, 0.0, 1.0),
+	(1.0, 1.0, 0.0),
+	(1.0, 0.0, 1.0),
+	(0.0, 1.0, 1.0),
+	(0.5, 0.0, 0.0),
+	(1.0, 0.6, 0.0),
+	(0.8, 0.6, 1.0),
+	(0.0, 0.6, 0.2),
+	(0.0, 0.6, 1.0),
+	(0.6, 0.0, 1.0),
+]
 
 
 
@@ -48,7 +63,7 @@ if __name__ == '__main__':
 		src_pts = np.float32(query_pt_set).reshape(-1, 1, 2)
 		dst_pts = np.float32(train_pt_set).reshape(-1, 1, 2)
 
-		explore_match('Raw', img1, img2, construct_kp_pairs(query_pt_set, train_pt_set), output_img = original_match_image)
+		explore_match('Raw', img1, img2, utils.construct_kp_pairs(query_pt_set, train_pt_set), output_img = original_match_image)
 
 		# 使用8个对应点构造Homography
 		M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
@@ -57,6 +72,7 @@ if __name__ == '__main__':
 
 		height, width = img1.shape;
 		result = cv2.warpPerspective(img1, M, (width * 2, height * 2))
+		result = utils.cut_black_edge(result)
 		if transformed_image:
 			cv2.imwrite(transformed_image, result)
 		else:
@@ -67,7 +83,7 @@ if __name__ == '__main__':
 		query_pt_set_ransaced = itertools.compress(query_pt_set, mask)
 		train_pt_set_ransaced = itertools.compress(train_pt_set, mask)
 		explore_match('Ransaced', img1, img2, \
-			construct_kp_pairs(query_pt_set_ransaced, train_pt_set_ransaced), \
+			utils.construct_kp_pairs(query_pt_set_ransaced, train_pt_set_ransaced), \
 			output_img = output_image) #cv2 shows image
 
 		cv2.waitKey()
@@ -88,7 +104,9 @@ if __name__ == '__main__':
 				elif event == cv2.EVENT_LBUTTONUP:
 					if not cancel:
 						collector.append((x, y))
-						cv2.circle(image, (x, y), 3, (0, 255, 0), -1, lineType = cv2.CV_AA)
+						index = len(collector) - 1
+						color = map(lambda x: int(x * 255), pointColor[index])
+						cv2.circle(image, (x, y), 3, color, -1, lineType = cv2.CV_AA)
 						cv2.imshow(win, image)
 			return onmouse
 
